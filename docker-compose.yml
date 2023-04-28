@@ -1,0 +1,65 @@
+version: "3.5"
+
+services:
+  mysql-m:
+    build:
+      context: mysql/
+    ports:
+      - "127.0.0.1:8001:3306"
+    volumes:
+      - "./etc/master.cnf:/etc/mysql/conf.d/master.cnf"
+      - "./mysql_data/data.sql:/docker-entrypoint-initdb.d/1_data.sql"
+      - "./mysql_data/master.sql:/docker-entrypoint-initdb.d/2_master.sql"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=test
+      - MYSQL_USER=test_user
+      - MYSQL_PASSWORD=user_password
+
+  mysql-s1:
+    build:
+      context: mysql/
+    ports:
+      - "127.0.0.1:8002:3306"
+    volumes:
+      - "./etc/slave1.cnf:/etc/mysql/conf.d/slave.cnf"
+      - "./mysql_data/data.sql:/docker-entrypoint-initdb.d/1_data.sql"
+      - "./mysql_data/slave.sql:/docker-entrypoint-initdb.d/2_slave.sql"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=test
+      - MYSQL_USER=test_user
+      - MYSQL_PASSWORD=user_password
+    links:
+      - mysql-m
+    depends_on:
+      - mysql-m
+
+  mysql-s2:
+    build:
+      context: mysql/
+    ports:
+      - "127.0.0.1:8003:3306"
+    volumes:
+      - "./etc/slave2.cnf:/etc/mysql/conf.d/slave.cnf"
+      - "./mysql_data/data.sql:/docker-entrypoint-initdb.d/1_data.sql"
+      - "./mysql_data/slave.sql:/docker-entrypoint-initdb.d/2_slave.sql"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=test
+      - MYSQL_USER=test_user
+      - MYSQL_PASSWORD=user_password
+    links:
+      - mysql-m
+    depends_on:
+      - mysql-m
+
+
+  php:
+    image: hw21-php
+    build:
+      context: php/
+    links:
+      - mysql-m
+    depends_on:
+      - mysql-m
